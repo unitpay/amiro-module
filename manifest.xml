@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package id="unitpay.unitpay" version="1.0" manifestVersion="1.0">
+    <information lang="en">
+        <title>U`nitpay</title>
+        <description>Unitpay - payment system</description>
+        <author>Unitpay</author>
+        <source>https://unitpay.ru/</source>
+    </information>
+    <information lang="ru">
+        <title>Unitpay</title>
+        <description>Unitpay - платежная система</description>
+        <author>Unitpay</author>
+        <source>https://unitpay.ru/</source>
+    </information>
+    <installation>
+        <install hypermodule="ami_fake" configuration="unitpay" version="1.0" />
+    </installation>
+    <dependencies>
+        <dependency hypermodule="ami_fake" version="1.0" />
+    </dependencies>
+</package>

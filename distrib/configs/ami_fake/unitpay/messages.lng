@@ -1,0 +1,4 @@
+%%after_install%en%%
+Open "Service :: System Options :: Payment methods" section to setup driver.
+%%after_install%ru%%
+Для настройки перейдите в раздел "Сервис :: Настройки системы :: Способы оплаты" и настройте установленный драйвер.

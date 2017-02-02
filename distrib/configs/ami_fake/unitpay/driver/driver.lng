@@ -1,0 +1,19 @@
+%%driver_title%en%%
+Unitpay
+%%driver_title%ru%%
+Unitpay
+
+%%PUBLIC_KEY%en%%
+PUBLIC KEY
+%%PUBLIC_KEY%ru%%
+PUBLIC KEY
+
+%%SECRET_KEY%en%%
+SECRET KEY
+%%SECRET_KEY%ru%%
+SECRET KEY
+
+%%driver_button_caption%en%%
+Pay using Unitpay
+%%driver_button_caption%ru%%
+Заплатить через Unitpay
