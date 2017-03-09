@@ -91,7 +91,7 @@ class Unitpay_PaymentSystemDriver extends AMI_PaymentSystemDriver{
     } else {
       $status_sign = false;
     }
-    $status_sign = true;
+//    $status_sign = true;
     if ($status_sign) {
       switch ($method) {
         case 'check':
