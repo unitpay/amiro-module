@@ -3,6 +3,11 @@ Unitpay
 %%driver_title%ru%%
 Unitpay
 
+%%DOMAIN%en%%
+DOMAIN
+%%DOMAIN%ru%%
+DOMAIN
+
 %%PUBLIC_KEY%en%%
 PUBLIC KEY
 %%PUBLIC_KEY%ru%%

@@ -35,7 +35,7 @@ class Unitpay_PaymentSystemDriver extends AMI_PaymentSystemDriver{
     $desc = 'Заказ №' . $aData['order'];
     $account = $aData['order'];
 
-    $aData['payment_url'] = 'https://unitpay.ru/pay/' . $aData['PUBLIC_KEY'] .
+    $aData['payment_url'] = 'https://'.$aData['DOMAIN'].'/pay/' . $aData['PUBLIC_KEY'] .
         '?' . 'sum=' . $sum .
         '&' . 'desc=' . $desc .
         '&' . 'account=' . $account;

@@ -33,11 +33,11 @@ class AmiFake_Unitpay_Meta extends AMI_HyperConfig_Meta{
     protected $aInfo = array(
         'en' => array(
             'description' => 'Unitpay payment system',
-            'author'      => '<a href="https://unitpay.ru" target="_blank">Unitpay</a>'
+            'author'      => 'Unitpay'
         ),
         'ru' => array(
             'description' => 'Unitpay платежная система',
-            'author'      => '<a href="https://unitpay.ru" target="_blank">Unitpay</a>'
+            'author'      => 'Unitpay'
         )
     );
 
