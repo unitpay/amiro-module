@@ -32,16 +32,102 @@ class Unitpay_PaymentSystemDriver extends AMI_PaymentSystemDriver{
 
     $sum = $aData['amount'];
     $sum = number_format($sum, 2, ".", "");
+	
     $desc = 'Заказ №' . $aData['order'];
     $account = $aData['order'];
+	$oOrder = AMI::getResourceModel('eshop_order/table')->find($account);
+	
+	$currency = $aData['currency'] == "RUR" ? "RUB" : $aData['currency'];
+
+	$signature = hash('sha256', join('{up}', array(
+		$account,
+		$currency,
+		$desc,
+		$sum ,
+		$aData['SECRET_KEY']
+	)));
+		
+	$items = array();
+	
+	$oOrderProductList =
+            AMI::getResourceModel('eshop_order_item/table', array(array('doRemapListItems' => TRUE)))
+            ->getList()
+            ->addColumn('*')
+            ->addSearchCondition(array('id_order' => $account))
+            ->load();
+	
+	foreach($oOrderProductList as $oProduct) {
+		$aProduct = $oProduct->data;
+		$aProduct = $aProduct['item_info'];
+		$itemCurrency = $aProduct['currency'] == "RUR" ? "RUB" : $aProduct['currency'];
+		$discount = $aProduct["percentage_discount"];
+		
+		$items[] = array(
+			"name" => $aProduct["name"],
+			"count" => $oProduct->qty,
+			"price" => number_format($aProduct["order_price"], 2, ".", ""),
+			"currency" => $itemCurrency,
+			"nds" => $this->getTaxRates($aProduct["tax_item_value"]),
+			"type" => "commodity"
+		);
+	}
+	
+	
+	
+	if($oOrder->shipping > 0) {
+		$items[] = array(
+			"name" => "Доставка",
+			"count" => 1,
+			"price" => number_format($oOrder->shipping, 2, ".", ""),
+			"currency" => $currency,
+			//"nds" => $this->getTaxRates($oOrder->tax),
+			"type" => "service"
+		);
+	}
+	
+	$cashItems = base64_encode(json_encode($items));
+	
+	 $aCart = array();
+        foreach(
+            array(
+                'shipping' => 'PAYMENTREQUEST_0_SHIPPINGAMT',
+                'tax'      => 'PAYMENTREQUEST_0_TAXAMT'
+            ) as $srcField => $destField
+        ){
+            $aCart[$destField] = $oOrder->getValue($srcField);
+        }
 
     $aData['payment_url'] = 'https://'.$aData['DOMAIN'].'/pay/' . $aData['PUBLIC_KEY'] .
         '?' . 'sum=' . $sum .
         '&' . 'desc=' . $desc .
+		'&' . 'signature=' . $signature .
+		'&' . 'currency=' . $currency .
+		'&' . 'customerEmail=' . $aData['email'] .
+		'&' . 'customerPhone=' . preg_replace('/\D/', '', $aData['contact']) .
+		'&' . 'cashItems=' . $cashItems .
         '&' . 'account=' . $account;
+		
 
     return parent::getPayButtonParams($aData, $aRes);
   }
+  
+	public function getTaxRates($rate){
+		switch (intval($rate)){
+			case 10:
+				$vat = 'vat10';
+				break;
+			case 20:
+				$vat = 'vat20';
+				break;
+			case 0:
+				$vat = 'vat0';
+				break;
+			default:
+				$vat = 'none';
+		}
+
+		return $vat;
+	}
 
   /**
    * Verify the order from user back link. In success case 'accepted' status will be setup for order.
@@ -95,13 +181,13 @@ class Unitpay_PaymentSystemDriver extends AMI_PaymentSystemDriver{
     if ($status_sign) {
       switch ($method) {
         case 'check':
-          $result = $this->check($params);
+          $result = $this->check($params, $aOrderData);
           break;
         case 'pay':
-          $result = $this->pay($params);
+          $result = $this->pay($params, $aOrderData);
           break;
         case 'error':
-          $result = $this->error($params);
+          $result = $this->error($params, $aOrderData);
           break;
         default:
           $result = array('error' =>
@@ -118,21 +204,17 @@ class Unitpay_PaymentSystemDriver extends AMI_PaymentSystemDriver{
 
   }
 
-  function check( $params )
+  function check( $params, $aOrderData)
   {
     $order_id = $params['account'];
     $order = AMI::getResourceModel('eshop_order/table')->find($order_id);
-    $total = $order->total;
-    if ((float)$total != (float)$params['orderSum']) {
+    $total = number_format(($order->total + $order->shipping + $order->tax), 2, ".", "");
+	
+    if ((float) $total != (float) $params['orderSum']) {
       $result = array('error' =>
           array('message' => 'не совпадает сумма заказа')
       );
-    }elseif ('RUB' != $params['orderCurrency']) {
-      $result = array('error' =>
-          array('message' => 'не совпадает валюта заказа')
-      );
-    }
-    else{
+    } else {
       $result = array('result' =>
           array('message' => 'Запрос успешно обработан')
       );
@@ -142,22 +224,17 @@ class Unitpay_PaymentSystemDriver extends AMI_PaymentSystemDriver{
 
   }
 
-  function pay( $params )
+  function pay( $params, $aOrderData)
   {
     $order_id = $params['account'];
     $order = AMI::getResourceModel('eshop_order/table')->find($order_id);
-    $total = $order->total;
-
-    if ((float)$total != (float)$params['orderSum']) {
+	$total = number_format(($order->total + $order->shipping + $order->tax), 2, ".", "");
+	
+    if ((float) $total != (float) $params['orderSum']) {
       $result = array('error' =>
           array('message' => 'не совпадает сумма заказа')
       );
-    }elseif ('RUB' != $params['orderCurrency']) {
-      $result = array('error' =>
-          array('message' => 'не совпадает валюта заказа')
-      );
-    }
-    else{
+    } else{
       global $cms, $oOrder;
       $oOrder->updateStatus($cms, $order_id, 'auto', 'confirmed');
       $this->onPaymentConfirmed($order_id);
@@ -166,10 +243,11 @@ class Unitpay_PaymentSystemDriver extends AMI_PaymentSystemDriver{
           array('message' => 'Запрос успешно обработан')
       );
     }
+	
     return $result;
   }
 
-  function error( $params )
+  function error( $params, $aOrderData)
   {
 
     $order_id = $params['account'];
